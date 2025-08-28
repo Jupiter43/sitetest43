@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Grand Theft Auto V</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url('1.png') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      color: white;
+    }
+    .game-box {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 30px;
+      border-radius: 15px;
+    }
+    .game-box img {
+      width: 328px;
+      height: 383px;
+      margin-bottom: 20px;
+    }
+    .game-box h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+    .play-btn {
+      background: #28a745;
+      color: white;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .play-btn:hover {
+      background: #218838;
+    }
+    .video-container {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: black;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .video-container video {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    .notification {
+      position: fixed;
+      left: 0;
+      right: 0;
+      padding: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .notification.error {
+      top: 0;
+      background: red;
+      color: white;
+    }
+    .notification.region {
+      bottom: 0;
+      background: orange;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-box" id="main-screen">
+    <img src="icon.png" alt="GTA V">
+    <h1>Grand Theft Auto V</h1>
+    <button class="play-btn" onclick="startGame()">ИГРАТЬ</button>
+  </div>
+
+  <div class="video-container" id="video-screen">
+    <video id="game-video" src="0.mp4"></video>
+  </div>
+
+  <script>
+    function startGame() {
+      let code = prompt("Введите код бета-тестера:");
+      if (code !== "8995") {
+        alert("Неверный код!");
+        return;
+      }
+      document.getElementById("main-screen").style.display = "none";
+      let videoScreen = document.getElementById("video-screen");
+      videoScreen.style.display = "flex";
+      let video = document.getElementById("game-video");
+      video.play();
+
+      // Определение страны через ipinfo.io
+      fetch("https://ipinfo.io/json?token=e2ffd2eef0cf12")
+        .then(res => res.json())
+        .then(data => {
+          console.log("Страна:", data.country);
+          if (data.country === "RU") {
+            setTimeout(() => {
+              video.pause();
+              let notif = document.createElement("div");
+              notif.className = "notification region";
+              notif.innerText = "Недоступно в вашем регионе. (Код: 403)";
+              document.body.appendChild(notif);
+            }, 3000);
+          }
+        })
+        .catch(err => console.error("Ошибка определения региона:", err));
+
+      // Когда видео закончилось
+      video.onended = () => {
+        window.location.href = window.location.pathname + "?error=404";
+      };
+    }
+
+    // Проверка ошибки после возврата
+    window.onload = () => {
+      if (window.location.search.includes("error=404")) {
+        let notif = document.createElement("div");
+        notif.className = "notification error";
+        notif.innerText = "Произошла неизвестная ошибка! (Код: 404)";
+        document.body.appendChild(notif);
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Grand Theft Auto V</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url('0.png') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      color: white;
+      transition: background 1s ease-in-out;
+    }
+    .game-box {
+      text-align: center;
+      padding: 30px;
+    }
+    .game-box img {
+      width: 328px;
+      height: 383px;
+      margin-bottom: 20px;
+    }
+    .game-box h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+    .play-btn, .online-btn {
+      display: block;
+      margin: 10px auto;
+      background: #28a745;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .play-btn:hover { background: #218838; }
+    .online-btn { background: #007bff; }
+    .online-btn:hover { background: #0069d9; }
+
+    .video-container {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: black;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .video-container video {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .notification {
+      position: fixed;
+      left: 0;
+      right: 0;
+      padding: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .notification.error {
+      top: 0;
+      background: red;
+      color: white;
+    }
+    .notification.region {
+      bottom: 0;
+      background: orange;
+      color: white;
+    }
+
+    .character-select {
+      display: none;
+      text-align: center;
+    }
+    .character-select h2 {
+      margin-bottom: 20px;
+    }
+    .characters {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    .character {
+      text-align: center;
+      cursor: pointer;
+    }
+    .character img {
+      width: 160px;
+      height: 160px;
+      border-radius: 10px;
+      border: 2px solid white;
+    }
+    .character span {
+      display: block;
+      margin-top: 8px;
+      font-size: 16px;
+    }
+    .character.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ===== Кастомное окно ===== */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      width: 300px;
+    }
+    .modal-content h2 {
+      margin-bottom: 15px;
+    }
+    .modal-content input {
+      width: 90%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 5px;
+      text-align: center;
+      font-size: 16px;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+    }
+    .modal-buttons button {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .ok-btn { background: #28a745; color: white; }
+    .cancel-btn { background: #007bff; color: white; }
+
+    /* Баннеры */
+    .banner {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 280px;
+      height: 600px;
+    }
+    .banner.left { left: 0; }
+    .banner.right { right: 0; }
+  </style>
+</head>
+<body>
+  <div class="game-box" id="main-screen">
+    <img src="icon.png" alt="GTA V">
+    <h1>Grand Theft Auto V</h1>
+    <button class="play-btn" id="playBtn" onclick="openModal()">ИГРАТЬ</button>
+    <button class="online-btn" onclick="showOnlineError()">Online</button>
+  </div>
+
+  <!-- Выбор персонажа -->
+  <div class="character-select" id="character-screen">
+    <h2>Выберите персонажа для игры</h2>
+    <div class="characters">
+      <div class="character" onclick="startGame('michael')">
+        <img src="michael.png" alt="Майкл">
+        <span>Майкл</span>
+      </div>
+      <div class="character disabled">
+        <img src="franklin.png" alt="Франклин">
+        <span>Франклин</span>
+      </div>
+      <div class="character disabled">
+        <img src="trevor.png" alt="Тревор">
+        <span>Тревор</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Видео -->
+  <div class="video-container" id="video-screen">
+    <video id="game-video" src="0.mp4"></video>
+  </div>
+
+  <!-- Кастомное окно -->
+  <div class="modal" id="codeModal">
+    <div class="modal-content">
+      <h2>Введите код бета-тестера</h2>
+      <input type="text" id="betaCode" placeholder="Код">
+      <div class="modal-buttons">
+        <button class="ok-btn" onclick="checkBetaCode()">ОК</button>
+        <button class="cancel-btn" onclick="noCode()">Нету</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Смена фонов =====
+    const backgrounds = ["0.png", "fon1.png", "fon2.png", "fon3.png", "fon4.png"];
+    let bgIndex = 0;
+    setInterval(() => {
+      bgIndex = (bgIndex + 1) % backgrounds.length;
+      document.body.style.background = `url('${backgrounds[bgIndex]}') no-repeat center center fixed`;
+      document.body.style.backgroundSize = "cover";
+    }, 5000);
+
+    // ===== Открыть кастомное окно =====
+    function openModal() {
+      document.getElementById("codeModal").style.display = "flex";
+    }
+
+    // ===== Проверка кода =====
+    function checkBetaCode() {
+      let code = document.getElementById("betaCode").value;
+      if (code === "8995") {
+        document.getElementById("codeModal").style.display = "none";
+        document.getElementById("main-screen").style.display = "none";
+        document.getElementById("character-screen").style.display = "block";
+      } else {
+        alert("Неверный код!");
+      }
+    }
+
+    // ===== Нету кода =====
+    function noCode() {
+      document.getElementById("codeModal").style.display = "none";
+      let playBtn = document.getElementById("playBtn");
+      playBtn.disabled = true;
+      playBtn.style.background = "#007bff";
+      playBtn.innerText = "НЕДОСТУПНО";
+
+      // Баннеры
+      let leftBanner = document.createElement("img");
+      leftBanner.src = "3.png";
+      leftBanner.className = "banner left";
+      document.body.appendChild(leftBanner);
+
+      let rightBanner = document.createElement("img");
+      rightBanner.src = "4.png";
+      rightBanner.className = "banner right";
+      document.body.appendChild(rightBanner);
+    }
+
+    // ===== Ошибка Online =====
+    function showOnlineError() {
+      let notif = document.createElement("div");
+      notif.className = "notification error";
+      notif.innerText = "Произошла неизвестная ошибка. (Код: 407)";
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 4000);
+    }
+
+    // ===== Запуск игры только за Майкла =====
+    function startGame(character) {
+      if (character !== "michael") return;
+
+      document.getElementById("character-screen").style.display = "none";
+      let videoScreen = document.getElementById("video-screen");
+      videoScreen.style.display = "flex";
+      let video = document.getElementById("game-video");
+      video.play();
+
+      // Проверка региона
+      fetch("https://ipinfo.io/json?token=e2ffd2eef0cf12")
+        .then(res => res.json())
+        .then(data => {
+          if (data.country === "RU") {
+            setTimeout(() => {
+              video.pause();
+              let notif = document.createElement("div");
+              notif.className = "notification region";
+              notif.innerText = "Недоступно в вашем регионе. (Код: 403)";
+              document.body.appendChild(notif);
+            }, 3000);
+          }
+        })
+        .catch(err => console.error("Ошибка определения региона:", err));
+
+      // Если видео закончилось
+      video.onended = () => {
+        window.location.href = window.location.pathname + "?error=404";
+      };
+    }
+
+    // ===== Проверка ошибки 404 при перезагрузке =====
+    window.onload = () => {
+      if (window.location.search.includes("error=404")) {
+        let notif = document.createElement("div");
+        notif.className = "notification error";
+        notif.innerText = "Произошла неизвестная ошибка! (Код: 404)";
+        document.body.appendChild(notif);
+      }
+    };
+  </script>
+</body>
+</html>
